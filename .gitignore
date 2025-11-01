@@ -1,0 +1,183 @@
+# CFramework .gitignore
+
+#==============================================================================
+# Build outputs
+#==============================================================================
+*.o
+*.obj
+*.elf
+*.hex
+*.bin
+*.map
+*.lst
+*.su
+*.d
+*.a
+*.so
+*.dll
+*.dylib
+*.exe
+
+# Build directories
+build/
+Build/
+BUILD/
+Debug/
+Release/
+dist/
+out/
+
+#==============================================================================
+# IDE and Editor files
+#==============================================================================
+
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+*/copilot-instructions.md
+
+# Eclipse / STM32CubeIDE
+.metadata/
+.settings/
+.cproject
+.project
+.pydevproject
+*.launch
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.classpath
+.factorypath
+.buildpath
+.target
+
+# IAR
+*.dep
+*.eww
+*.ewd
+*.ewp
+*.dni
+*.wsdt
+settings/
+Backup*/
+Debug/
+Release/
+
+# Keil
+*.uvguix.*
+*.uvopt
+*.uvproj
+*.uvproj.*
+*.bak
+*.o
+*.d
+*.crf
+*.lnp
+*.lst
+*.map
+*.hex
+*.axf
+*.tra
+*.htm
+*.dep
+*.plg
+*.sct
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+#==============================================================================
+# OS generated files
+#==============================================================================
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+*.stackdump
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+.directory
+.fuse_hidden*
+
+#==============================================================================
+# Documentation
+#==============================================================================
+*.pdf
+# Uncomment if you want to ignore generated docs
+# docs/_build/
+# docs/html/
+# docs/latex/
+
+#==============================================================================
+# Logs and databases
+#==============================================================================
+*.log
+*.sql
+*.sqlite
+*.db
+
+#==============================================================================
+# Temporary files
+#==============================================================================
+*.tmp
+*.temp
+*.cache
+
+#==============================================================================
+# Testing
+#==============================================================================
+test_results/
+coverage/
+*.gcov
+*.gcda
+*.gcno
+
+#==============================================================================
+# Dependencies (optional - uncomment if needed)
+#==============================================================================
+# node_modules/
+# vendor/
+
+#==============================================================================
+# User-specific files (keep these local)
+#==============================================================================
+# User config should be copied from template
+# cf_user_config.h is typically project-specific, not in framework
+
+#==============================================================================
+# Keep these files
+#==============================================================================
+!.gitkeep
+!README.md
+!LICENSE
+!Makefile
