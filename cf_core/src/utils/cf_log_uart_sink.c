@@ -88,8 +88,17 @@ static cf_status_t uart_sink_write(cf_log_sink_t* self, cf_log_level_t level, co
         return CF_OK;
     }
 
+    // Send message
     size_t len = strlen(message);
-    return platform_uart_write(uart_sink->uart, (const uint8_t*)message, len, uart_sink->timeout_ms);
+    cf_status_t status = platform_uart_write(uart_sink->uart, (const uint8_t*)message, len, uart_sink->timeout_ms);
+
+    if (status != CF_OK) {
+        return status;
+    }
+
+    // Append newline (CRLF for better terminal compatibility)
+    const char* newline = "\r\n";
+    return platform_uart_write(uart_sink->uart, (const uint8_t*)newline, 2, uart_sink->timeout_ms);
 }
 
 static void uart_sink_set_level(cf_log_sink_t* self, cf_log_level_t level)

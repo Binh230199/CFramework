@@ -81,6 +81,16 @@ cf_status_t cf_gpio_port_read(cf_gpio_handle_t handle, cf_gpio_pin_state_t* stat
  */
 cf_status_t cf_gpio_port_toggle(cf_gpio_handle_t handle);
 
+/**
+ * @brief EXTI interrupt callback (platform-specific)
+ *
+ * @param GPIO_Pin Pin number bitmask that triggered the interrupt
+ *
+ * @note This function should be called from HAL_GPIO_EXTI_Callback()
+ * @note Only available on platforms that support EXTI
+ */
+void cf_gpio_exti_callback(uint16_t GPIO_Pin);
+
 #ifdef __cplusplus
 }
 #endif

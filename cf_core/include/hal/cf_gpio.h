@@ -36,7 +36,10 @@ typedef enum {
     CF_GPIO_MODE_OUTPUT_OD,      /**< Open-drain output */
     CF_GPIO_MODE_AF_PP,          /**< Alternate function push-pull */
     CF_GPIO_MODE_AF_OD,          /**< Alternate function open-drain */
-    CF_GPIO_MODE_ANALOG
+    CF_GPIO_MODE_ANALOG,
+    CF_GPIO_MODE_IT_RISING,         /**< Interrupt on rising edge */
+    CF_GPIO_MODE_IT_FALLING,        /**< Interrupt on falling edge */
+    CF_GPIO_MODE_IT_RISING_FALLING  /**< Interrupt on both edges */
 } cf_gpio_mode_t;
 
 /**
@@ -67,6 +70,17 @@ typedef enum {
 } cf_gpio_pin_state_t;
 
 /**
+ * @brief GPIO interrupt callback function type
+ *
+ * @param handle GPIO handle that triggered the interrupt
+ * @param user_data User data passed during callback registration
+ *
+ * @note This callback is called from ISR context - keep it short!
+ * @note Do NOT call blocking functions or log from this callback
+ */
+typedef void (*cf_gpio_irq_callback_t)(cf_gpio_handle_t handle, void* user_data);
+
+/**
  * @brief GPIO configuration
  */
 typedef struct {
@@ -76,6 +90,8 @@ typedef struct {
     cf_gpio_pull_t pull;         /**< Pull-up/down configuration */
     cf_gpio_speed_t speed;       /**< Output speed */
     uint32_t alternate;          /**< Alternate function (if AF mode) */
+    cf_gpio_irq_callback_t irq_callback;  /**< Interrupt callback (for EXTI modes) */
+    void* irq_user_data;         /**< User data for interrupt callback */
 } cf_gpio_config_t;
 
 //==============================================================================

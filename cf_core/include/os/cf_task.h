@@ -117,6 +117,29 @@ cf_task_t cf_task_get_current(void);
 const char* cf_task_get_name(cf_task_t task);
 
 /**
+ * @brief Get current tick count
+ *
+ * @return Current system tick count
+ *
+ * @note In FreeRTOS mode, returns value from xTaskGetTickCount()
+ * @note In bare-metal mode, returns value from HAL_GetTick()
+ * @note This function is thread-safe
+ * @note Tick frequency depends on configTICK_RATE_HZ (typically 1000 Hz = 1ms per tick)
+ */
+uint32_t cf_task_get_tick_count(void);
+
+/**
+ * @brief Get tick count from ISR context
+ *
+ * @return Current system tick count
+ *
+ * @note This function is safe to call from interrupt context
+ * @note In FreeRTOS mode, returns value from xTaskGetTickCountFromISR()
+ * @note In bare-metal mode, returns value from HAL_GetTick()
+ */
+uint32_t cf_task_get_tick_count_from_isr(void);
+
+/**
  * @brief Start the RTOS scheduler
  *
  * @note This function does NOT return
@@ -129,6 +152,27 @@ void cf_task_start_scheduler(void);
  * @param[out] config Configuration structure to initialize
  */
 void cf_task_config_default(cf_task_config_t* config);
+
+#else  /* !CF_RTOS_ENABLED - Bare-metal declarations */
+
+/**
+ * @brief Get current tick count (bare-metal mode)
+ *
+ * @return Current system tick count from HAL_GetTick()
+ *
+ * @note In bare-metal mode, uses HAL_GetTick() (typically 1ms resolution)
+ * @note This function is thread-safe
+ */
+uint32_t cf_task_get_tick_count(void);
+
+/**
+ * @brief Get tick count from ISR context (bare-metal mode)
+ *
+ * @return Current system tick count from HAL_GetTick()
+ *
+ * @note In bare-metal mode, same as cf_task_get_tick_count()
+ */
+uint32_t cf_task_get_tick_count_from_isr(void);
 
 #endif /* CF_RTOS_ENABLED */
 

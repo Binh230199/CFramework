@@ -127,6 +127,16 @@ const char* cf_task_get_name(cf_task_t task)
     return pcTaskGetName(task->handle);
 }
 
+uint32_t cf_task_get_tick_count(void)
+{
+    return (uint32_t)xTaskGetTickCount();
+}
+
+uint32_t cf_task_get_tick_count_from_isr(void)
+{
+    return (uint32_t)xTaskGetTickCountFromISR();
+}
+
 void cf_task_start_scheduler(void)
 {
     vTaskStartScheduler();
@@ -145,6 +155,40 @@ void cf_task_config_default(cf_task_config_t* config)
     config->name = CF_TASK_DEFAULT_NAME;
     config->stack_size = CF_TASK_DEFAULT_STACK_SIZE;
     config->priority = CF_TASK_PRIORITY_NORMAL;
+}
+
+#else  /* !CF_RTOS_ENABLED - Bare-metal implementation */
+
+//==============================================================================
+// BARE-METAL STUB IMPLEMENTATIONS
+//==============================================================================
+
+/**
+ * @brief Get tick count in bare-metal mode
+ *
+ * @return Current HAL tick count
+ *
+ * @note Uses HAL_GetTick() which is typically implemented in STM32 HAL
+ */
+uint32_t cf_task_get_tick_count(void)
+{
+    // In bare-metal mode, use HAL tick counter
+    // This assumes STM32 HAL is available
+    extern uint32_t HAL_GetTick(void);
+    return HAL_GetTick();
+}
+
+/**
+ * @brief Get tick count from ISR in bare-metal mode
+ *
+ * @return Current HAL tick count
+ *
+ * @note In bare-metal mode, same as cf_task_get_tick_count()
+ */
+uint32_t cf_task_get_tick_count_from_isr(void)
+{
+    extern uint32_t HAL_GetTick(void);
+    return HAL_GetTick();
 }
 
 #endif /* CF_RTOS_ENABLED */

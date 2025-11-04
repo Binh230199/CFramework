@@ -78,7 +78,7 @@ static bool is_valid_config(const cf_gpio_config_t* config)
         return false;
     }
 
-    if (config->mode >= 6) {  // Invalid mode
+    if (config->mode > CF_GPIO_MODE_IT_RISING_FALLING) {  // Check against max mode
         return false;
     }
 

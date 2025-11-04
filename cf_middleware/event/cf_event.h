@@ -17,6 +17,7 @@ extern "C" {
 #endif
 
 #include "cf_common.h"
+#include "cf_event_types.h"  /* Include common types and utilities */
 
 #if CF_EVENT_ENABLED && CF_RTOS_ENABLED
 
