@@ -268,9 +268,9 @@ cf_status_t cf_gpio_port_toggle(cf_gpio_handle_t handle)
 
 /**
  * @brief Common EXTI callback - called by HAL_GPIO_EXTI_Callback
- * 
+ *
  * @param GPIO_Pin Pin number that triggered interrupt (GPIO_PIN_x bitmask)
- * 
+ *
  * @note This function should be called from HAL_GPIO_EXTI_Callback in user code
  */
 void cf_gpio_exti_callback(uint16_t GPIO_Pin)
@@ -282,7 +282,7 @@ void cf_gpio_exti_callback(uint16_t GPIO_Pin)
             break;
         }
     }
-    
+
     // Get platform data for this pin
     stm32l4_gpio_data_t* pdata = g_irq_table[pin_num];
     if (pdata != NULL && pdata->irq_callback != NULL) {

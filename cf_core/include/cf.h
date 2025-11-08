@@ -38,6 +38,8 @@ extern "C" {
     #include "os/cf_task.h"
     #include "os/cf_queue.h"
     #include "os/cf_timer.h"
+    #include "os/cf_time.h"
+    #include "os/cf_critical.h"
 #endif
 
 //==============================================================================

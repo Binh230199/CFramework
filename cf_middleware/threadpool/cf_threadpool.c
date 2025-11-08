@@ -12,6 +12,10 @@
 #include "os/cf_task.h"
 #include "os/cf_queue.h"
 
+// Include FreeRTOS queue for ISR operations
+#include "FreeRTOS.h"
+#include "queue.h"
+
 #if CF_LOG_ENABLED
     #include "utils/cf_log.h"
 #endif
@@ -389,6 +393,62 @@ cf_status_t cf_threadpool_submit(cf_threadpool_task_func_t function,
     g_threadpool.total_submitted++;
     cf_mutex_unlock(g_threadpool.mutex);
 
+    return CF_OK;
+}
+
+cf_status_t cf_threadpool_submit_from_isr(cf_threadpool_task_func_t function,
+                                           void* arg,
+                                           cf_threadpool_priority_t priority,
+                                           uint32_t timeout_ms,
+                                           BaseType_t* pxHigherPriorityTaskWoken)
+{
+    CF_PTR_CHECK(function);
+
+    if (!g_threadpool.initialized) {
+        return CF_ERROR_NOT_INITIALIZED;
+    }
+
+    if (g_threadpool.state != CF_THREADPOOL_RUNNING) {
+        return CF_ERROR_INVALID_STATE;
+    }
+
+    // Timeout must be 0 in ISR
+    if (timeout_ms != 0) {
+        return CF_ERROR_INVALID_PARAM;
+    }
+
+    // Create task descriptor
+    cf_threadpool_task_t task = {
+        .function = function,
+        .arg = arg,
+        .priority = priority
+    };
+
+    // Get queue for this priority
+    cf_queue_t queue = get_queue_for_priority(priority);
+
+    // Access underlying FreeRTOS queue handle for ISR-safe operation
+    // cf_queue_t is defined in cf_queue.c as: struct cf_queue_s { QueueHandle_t handle; }
+    // We need to access the handle directly to use xQueueSendFromISR
+    struct cf_queue_s {
+        QueueHandle_t handle;
+    };
+    struct cf_queue_s* q = (struct cf_queue_s*)queue;
+
+    // Submit to queue from ISR (non-blocking)
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    BaseType_t result = xQueueSendFromISR(q->handle, &task, &xHigherPriorityTaskWoken);
+    
+    if (pxHigherPriorityTaskWoken != NULL) {
+        *pxHigherPriorityTaskWoken = xHigherPriorityTaskWoken;
+    }
+
+    if (result != pdTRUE) {
+        return CF_ERROR_QUEUE_FULL;
+    }
+
+    // Note: Cannot update statistics in ISR (mutex not allowed)
+    
     return CF_OK;
 }
 

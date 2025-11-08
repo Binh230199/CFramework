@@ -122,6 +122,30 @@ cf_status_t cf_threadpool_submit(cf_threadpool_task_func_t function,
                                   uint32_t timeout_ms);
 
 /**
+ * @brief Submit task to ThreadPool from ISR context
+ *
+ * @param[in] function Task function to execute
+ * @param[in] arg Argument to pass to function
+ * @param[in] priority Task priority (for queue ordering)
+ * @param[in] timeout_ms Must be 0 (no blocking in ISR)
+ * @param[out] pxHigherPriorityTaskWoken Set to pdTRUE if context switch needed
+ *
+ * @return CF_OK on success
+ * @return CF_ERROR_NULL_POINTER if function is NULL
+ * @return CF_ERROR_NOT_INITIALIZED if ThreadPool not initialized
+ * @return CF_ERROR_INVALID_STATE if ThreadPool is shutting down
+ * @return CF_ERROR_QUEUE_FULL if queue is full
+ *
+ * @note This function is ISR-safe (FreeRTOS FromISR variant)
+ * @note Caller must call portYIELD_FROM_ISR() if pxHigherPriorityTaskWoken is set
+ */
+cf_status_t cf_threadpool_submit_from_isr(cf_threadpool_task_func_t function,
+                                           void* arg,
+                                           cf_threadpool_priority_t priority,
+                                           uint32_t timeout_ms,
+                                           BaseType_t* pxHigherPriorityTaskWoken);
+
+/**
  * @brief Get number of active tasks
  *
  * @return Number of active tasks (0 if not initialized)
