@@ -41,7 +41,7 @@ void cf_assert_failed(const char* file, int line, const char* expr)
 
     // Disable interrupts and halt
     #if defined(__GNUC__) || defined(__clang__)
-        __asm volatile ("cpsid i" ::: "memory");  // ARM Cortex-M
+       // __asm volatile ("cpsid i" ::: "memory");  // ARM Cortex-M
     #endif
 
     while(1) {

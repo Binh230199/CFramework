@@ -201,7 +201,7 @@ static cf_status_t create_workers(uint32_t count, uint32_t stack_size, cf_task_p
     task_config.priority = priority;
 
     for (uint32_t i = 0; i < count; i++) {
-        char name[16];
+        char name[32];
         snprintf(name, sizeof(name), "Worker%lu", i);
         task_config.name = name;
         task_config.argument = (void*)(uintptr_t)i;
