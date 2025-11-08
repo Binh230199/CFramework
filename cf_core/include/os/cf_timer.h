@@ -19,9 +19,16 @@ extern "C" {
 #include "cf_common.h"
 
 #if CF_RTOS_ENABLED
+    #ifdef ESP_PLATFORM
+        #include "freertos/FreeRTOS.h"
+        #include "freertos/timers.h"
+    #else
+        #include "FreeRTOS.h"
+        #include "timers.h"
+    #endif
+#endif
 
-#include "FreeRTOS.h"
-#include "timers.h"
+#if CF_RTOS_ENABLED
 
 //==============================================================================
 // TYPE DEFINITIONS

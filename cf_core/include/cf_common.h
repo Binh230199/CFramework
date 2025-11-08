@@ -28,7 +28,11 @@ extern "C" {
 
 // FreeRTOS memory allocation (if RTOS enabled)
 #if CF_RTOS_ENABLED && !defined(CF_COMMON_NO_FREERTOS)
-    #include "FreeRTOS.h"
+    #ifdef ESP_PLATFORM
+        #include "freertos/FreeRTOS.h"
+    #else
+        #include "FreeRTOS.h"
+    #endif
     // pvPortMalloc and vPortFree available
 #endif
 

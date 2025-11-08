@@ -17,8 +17,14 @@ extern "C" {
 
 #include "cf_event.h"
 #include "cf_event_types.h"
-#include "FreeRTOS.h"
-#include "task.h"
+
+#ifdef ESP_PLATFORM
+    #include "freertos/FreeRTOS.h"
+    #include "freertos/task.h"
+#else
+    #include "FreeRTOS.h"
+    #include "task.h"
+#endif
 
 //==============================================================================
 // DOMAIN DEFINITION

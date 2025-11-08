@@ -127,7 +127,7 @@ typedef enum {
  * to have common fields across all events
  */
 typedef struct {
-    cf_event_timestamp_t timestamp;     /**< Event timestamp (HAL_GetTick or custom) */
+    cf_event_timestamp_t timestamp;     /**< Event timestamp (from cf_time_get_tick_count()) */
     uint16_t sequence;                  /**< Sequence number for ordering */
     uint8_t priority;                   /**< Event priority */
     uint8_t reserved;                   /**< Reserved for future use */

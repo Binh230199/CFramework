@@ -15,7 +15,11 @@
     #include "utils/cf_log.h"
 #endif
 
-#include "FreeRTOS.h"
+#ifdef ESP_PLATFORM
+    #include "freertos/FreeRTOS.h"
+#else
+    #include "FreeRTOS.h"
+#endif
 #include <string.h>
 
 //==============================================================================

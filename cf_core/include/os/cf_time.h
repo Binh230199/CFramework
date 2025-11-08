@@ -22,6 +22,16 @@ extern "C" {
 
 #include "cf_common.h"
 
+#if CF_RTOS_ENABLED
+    #ifdef ESP_PLATFORM
+        #include "freertos/FreeRTOS.h"
+        #include "freertos/task.h"
+    #else
+        #include "FreeRTOS.h"
+        #include "task.h"
+    #endif
+#endif
+
 //==============================================================================
 // PUBLIC API
 //==============================================================================
@@ -37,14 +47,9 @@ extern "C" {
 static inline uint32_t cf_time_get_tick_count(void)
 {
 #if CF_RTOS_ENABLED
-    #ifdef ESP_PLATFORM
-        return xTaskGetTickCount();
-    #else
-        extern uint32_t cf_task_get_tick_count(void);
-        return cf_task_get_tick_count();
-    #endif
+    return (uint32_t)xTaskGetTickCount();
 #else
-    return HAL_GetTick();
+    #error "cf_time requires RTOS. Please enable CF_RTOS_ENABLED."
 #endif
 }
 
@@ -58,14 +63,9 @@ static inline uint32_t cf_time_get_tick_count(void)
 static inline uint32_t cf_time_get_tick_count_from_isr(void)
 {
 #if CF_RTOS_ENABLED
-    #ifdef ESP_PLATFORM
-        return xTaskGetTickCountFromISR();
-    #else
-        extern uint32_t cf_task_get_tick_count_from_isr(void);
-        return cf_task_get_tick_count_from_isr();
-    #endif
+    return (uint32_t)xTaskGetTickCountFromISR();
 #else
-    return HAL_GetTick();
+    #error "cf_time requires RTOS. Please enable CF_RTOS_ENABLED."
 #endif
 }
 
@@ -80,13 +80,9 @@ static inline uint32_t cf_time_get_tick_count_from_isr(void)
 static inline uint32_t cf_time_ms_to_ticks(uint32_t ms)
 {
 #if CF_RTOS_ENABLED
-    #ifdef ESP_PLATFORM
-        return pdMS_TO_TICKS(ms);
-    #else
-        return (ms * configTICK_RATE_HZ) / 1000;
-    #endif
+    return (ms * configTICK_RATE_HZ) / 1000;
 #else
-    return ms;  /* Bare-metal: assume 1ms per tick */
+    return ms;
 #endif
 }
 
@@ -101,13 +97,9 @@ static inline uint32_t cf_time_ms_to_ticks(uint32_t ms)
 static inline uint32_t cf_time_ticks_to_ms(uint32_t ticks)
 {
 #if CF_RTOS_ENABLED
-    #ifdef ESP_PLATFORM
-        return (ticks * 1000) / configTICK_RATE_HZ;
-    #else
-        return (ticks * 1000) / configTICK_RATE_HZ;
-    #endif
+    return (ticks * 1000) / configTICK_RATE_HZ;
 #else
-    return ticks;  /* Bare-metal: assume 1ms per tick */
+    return ticks;
 #endif
 }
 
@@ -117,15 +109,13 @@ static inline uint32_t cf_time_ticks_to_ms(uint32_t ticks)
  * @param[in] ms Delay time in milliseconds
  *
  * @note Thread-safe, blocks calling task
- * @note Calls cf_task_delay() internally
  */
 static inline void cf_time_delay_ms(uint32_t ms)
 {
 #if CF_RTOS_ENABLED
-    extern void cf_task_delay(uint32_t delay_ms);
-    cf_task_delay(ms);
+    vTaskDelay(pdMS_TO_TICKS(ms));
 #else
-    HAL_Delay(ms);
+    #error "cf_time requires RTOS. Please enable CF_RTOS_ENABLED."
 #endif
 }
 

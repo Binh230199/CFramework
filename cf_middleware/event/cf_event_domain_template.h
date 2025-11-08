@@ -140,7 +140,7 @@ typedef struct {
  */
 static inline void template_event_1_init(template_event_1_t* event) {
     if (event != NULL) {
-        event->header.timestamp = HAL_GetTick();
+        event->header.timestamp = cf_time_get_tick_count();
         event->header.sequence = 0;
         event->header.priority = CF_EVENT_PRIORITY_NORMAL;
         event->counter = 0;

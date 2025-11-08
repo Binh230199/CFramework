@@ -13,8 +13,13 @@
 #include "os/cf_queue.h"
 
 // Include FreeRTOS queue for ISR operations
-#include "FreeRTOS.h"
-#include "queue.h"
+#ifdef ESP_PLATFORM
+    #include "freertos/FreeRTOS.h"
+    #include "freertos/queue.h"
+#else
+    #include "FreeRTOS.h"
+    #include "queue.h"
+#endif
 
 #if CF_LOG_ENABLED
     #include "utils/cf_log.h"
@@ -438,7 +443,7 @@ cf_status_t cf_threadpool_submit_from_isr(cf_threadpool_task_func_t function,
     // Submit to queue from ISR (non-blocking)
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     BaseType_t result = xQueueSendFromISR(q->handle, &task, &xHigherPriorityTaskWoken);
-    
+
     if (pxHigherPriorityTaskWoken != NULL) {
         *pxHigherPriorityTaskWoken = xHigherPriorityTaskWoken;
     }
@@ -448,7 +453,7 @@ cf_status_t cf_threadpool_submit_from_isr(cf_threadpool_task_func_t function,
     }
 
     // Note: Cannot update statistics in ISR (mutex not allowed)
-    
+
     return CF_OK;
 }
 
