@@ -1,0 +1,18 @@
+# The following lines of boilerplate have to be in your project's
+# CMakeLists in this exact order for cmake to work correctly
+cmake_minimum_required(VERSION 3.5)
+
+list(APPEND EXTRA_COMPONENT_DIRS
+    "../CFramework"         # CFramework component library
+    "../Application"        # ESP configuration component
+)
+
+add_compile_definitions(
+    # Platform identification flags
+    CF_USER_CONFIG=1
+    ESP_PLATFORM=1              # Enable ESP32 platform-specific code
+    CF_PLATFORM_ESP32=1         # Enable CFramework ESP32 platform support
+)
+
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+project(app-template)
