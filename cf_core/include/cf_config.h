@@ -123,6 +123,30 @@
 #endif
 
 //==============================================================================
+// MEMORY POOL CONFIGURATION
+//==============================================================================
+
+#ifndef CF_MEMPOOL_ENABLED
+    #define CF_MEMPOOL_ENABLED           1
+#endif
+
+#ifndef CF_MEMPOOL_MAX_POOLS
+    #define CF_MEMPOOL_MAX_POOLS         8
+#endif
+
+#ifndef CF_MEMPOOL_MAX_SIZE
+    #define CF_MEMPOOL_MAX_SIZE          2048
+#endif
+
+#ifndef CF_MEMPOOL_STATS_ENABLED
+    #define CF_MEMPOOL_STATS_ENABLED     1
+#endif
+
+#ifndef CF_MEMPOOL_HEALTH_CHECK_ENABLED
+    #define CF_MEMPOOL_HEALTH_CHECK_ENABLED 1
+#endif
+
+//==============================================================================
 // EVENT SYSTEM CONFIGURATION
 //==============================================================================
 
@@ -132,18 +156,6 @@
 
 #ifndef CF_EVENT_MAX_SUBSCRIBERS
     #define CF_EVENT_MAX_SUBSCRIBERS     32
-#endif
-
-//==============================================================================
-// MEMORY CONFIGURATION
-//==============================================================================
-
-#ifndef CF_MEMPOOL_ENABLED
-    #define CF_MEMPOOL_ENABLED           1
-#endif
-
-#ifndef CF_MEMPOOL_USE_STATIC
-    #define CF_MEMPOOL_USE_STATIC        1
 #endif
 
 //==============================================================================

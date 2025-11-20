@@ -11,6 +11,10 @@
 #include "os/cf_mutex.h"
 #include "threadpool/cf_threadpool.h"
 
+#if CF_MEMPOOL_ENABLED
+    #include "mempool/cf_mempool.h"
+#endif
+
 #if CF_LOG_ENABLED
     #include "utils/cf_log.h"
 #endif
@@ -65,6 +69,13 @@ typedef struct {
 
 static cf_event_system_t g_event_system = {0};
 
+#if CF_MEMPOOL_ENABLED
+// Event system memory pools
+static cf_mempool_handle_t g_event_ctx_pool = NULL;     // For dispatch contexts
+static cf_mempool_handle_t g_event_data_pools[5] = {0}; // For different data sizes
+static bool g_event_pools_initialized = false;
+#endif
+
 //==============================================================================
 // PRIVATE FUNCTIONS
 //==============================================================================
@@ -81,6 +92,121 @@ static int32_t find_free_subscriber_slot(void)
     }
     return -1;
 }
+
+#if CF_MEMPOOL_ENABLED
+/**
+ * @brief Initialize event system memory pools
+ * @note Called during cf_event_init() - safe to fail
+ */
+static cf_status_t init_event_pools(void)
+{
+    if (g_event_pools_initialized) {
+        return CF_OK;
+    }
+
+    // Initialize mempool system if not done
+    cf_status_t status = cf_mempool_init();
+    if (status != CF_OK && status != CF_ERROR) {
+        // CF_ERROR means already initialized - that's OK
+        return status;
+    }
+
+    // Create context pool (64B blocks for dispatch contexts)
+    cf_mempool_config_t ctx_config = {
+        .block_size = 64,  // sizeof(cf_event_dispatch_ctx_t) + alignment
+        .block_count = 30, // Support 30 concurrent async events
+        .name = "event_ctx"
+    };
+
+    status = cf_mempool_create(&g_event_ctx_pool, &ctx_config);
+    if (status != CF_OK) {
+#if CF_LOG_ENABLED
+        CF_LOG_W("Failed to create event context pool, using heap fallback");
+#endif
+        return status; // Non-fatal - will use heap fallback
+    }
+
+    // Create data pools for different sizes
+    cf_mempool_config_t data_configs[] = {
+        { .block_size = 64,   .block_count = 20, .name = "event_64" },
+        { .block_size = 128,  .block_count = 15, .name = "event_128" },
+        { .block_size = 256,  .block_count = 10, .name = "event_256" },
+        { .block_size = 512,  .block_count = 5,  .name = "event_512" },
+        { .block_size = 1024, .block_count = 2,  .name = "event_1k" }
+    };
+
+    for (int i = 0; i < 5; i++) {
+        status = cf_mempool_create(&g_event_data_pools[i], &data_configs[i]);
+        if (status != CF_OK) {
+#if CF_LOG_ENABLED
+            CF_LOG_W("Failed to create event data pool %d, using heap fallback", i);
+#endif
+            // Continue - non-fatal
+        }
+    }
+
+    g_event_pools_initialized = true;
+
+#if CF_LOG_ENABLED
+    CF_LOG_I("Event system memory pools initialized");
+#endif
+
+    return CF_OK;
+}
+
+/**
+ * @brief Smart allocation for event data with heap fallback
+ * @param size Requested size
+ * @return Allocated pointer or NULL
+ */
+static void* event_smart_alloc(size_t size)
+{
+    void* ptr = NULL;
+
+    if (g_event_pools_initialized) {
+        // Try mempool allocation first
+        ptr = cf_mempool_alloc(size);
+        if (ptr) {
+            return ptr;
+        }
+        // Pool allocation failed - continue to heap fallback
+    }
+
+    // Heap fallback (original behavior)
+    ptr = pvPortMalloc(size);
+
+#if CF_LOG_ENABLED
+    if (ptr && g_event_pools_initialized) {
+        CF_LOG_D("Event alloc fallback to heap: size=%zu", size);
+    }
+#endif
+
+    return ptr;
+}
+
+/**
+ * @brief Smart deallocation for event data
+ * @param ptr Pointer to free
+ * @note Safe to call with NULL pointer
+ */
+static void event_smart_free(void* ptr)
+{
+    if (!ptr) {
+        return;
+    }
+
+    if (g_event_pools_initialized) {
+        // Try mempool free first
+        if (cf_mempool_free(ptr) == CF_OK) {
+            return; // Successfully freed from pool
+        }
+        // Not a pool pointer - continue to heap free
+    }
+
+    // Heap free (original behavior)
+    vPortFree(ptr);
+}
+#endif /* CF_MEMPOOL_ENABLED */
 
 /**
  * @brief Async event dispatch task
@@ -100,11 +226,19 @@ static void event_dispatch_task(void* arg)
 
     // Free data if allocated
     if (ctx->data != NULL) {
+#if CF_MEMPOOL_ENABLED
+        event_smart_free(ctx->data);
+#else
         vPortFree(ctx->data);
+#endif
     }
 
     // Free context
+#if CF_MEMPOOL_ENABLED
+    event_smart_free(ctx);
+#else
     vPortFree(ctx);
+#endif
 }
 
 /**
@@ -120,7 +254,11 @@ static void deliver_to_subscriber(const cf_event_subscriber_s* sub,
         sub->callback(event_id, data, data_size, sub->user_data);
     } else {
         // Asynchronous - dispatch to ThreadPool
+#if CF_MEMPOOL_ENABLED
+        cf_event_dispatch_ctx_t* ctx = (cf_event_dispatch_ctx_t*)event_smart_alloc(sizeof(cf_event_dispatch_ctx_t));
+#else
         cf_event_dispatch_ctx_t* ctx = (cf_event_dispatch_ctx_t*)pvPortMalloc(sizeof(cf_event_dispatch_ctx_t));
+#endif
         if (ctx == NULL) {
 #if CF_LOG_ENABLED
             CF_LOG_E("Failed to allocate dispatch context");
@@ -135,12 +273,20 @@ static void deliver_to_subscriber(const cf_event_subscriber_s* sub,
 
         // Copy data if present
         if (data != NULL && data_size > 0) {
+#if CF_MEMPOOL_ENABLED
+            ctx->data = event_smart_alloc(data_size);
+#else
             ctx->data = pvPortMalloc(data_size);
+#endif
             if (ctx->data == NULL) {
 #if CF_LOG_ENABLED
                 CF_LOG_E("Failed to allocate event data");
 #endif
+#if CF_MEMPOOL_ENABLED
+                event_smart_free(ctx);
+#else
                 vPortFree(ctx);
+#endif
                 return;
             }
             memcpy(ctx->data, data, data_size);
@@ -156,8 +302,13 @@ static void deliver_to_subscriber(const cf_event_subscriber_s* sub,
 #if CF_LOG_ENABLED
             CF_LOG_E("Failed to submit async event: %d", status);
 #endif
+#if CF_MEMPOOL_ENABLED
+            if (ctx->data) event_smart_free(ctx->data);
+            event_smart_free(ctx);
+#else
             if (ctx->data) vPortFree(ctx->data);
             vPortFree(ctx);
+#endif
         }
     }
 }
@@ -172,13 +323,21 @@ cf_status_t cf_event_init(void)
         return CF_ERROR_ALREADY_INITIALIZED;
     }
 
-    memset(&g_event_system, 0, sizeof(cf_event_system_t));
-
-    // Create mutex
+    // Create global mutex
     cf_status_t status = cf_mutex_create(&g_event_system.mutex);
     if (status != CF_OK) {
         return status;
     }
+
+    // Clear subscriber array
+    memset(g_event_system.subscribers, 0, sizeof(g_event_system.subscribers));
+    g_event_system.subscriber_count = 0;
+    g_event_system.total_published = 0;
+
+#if CF_MEMPOOL_ENABLED
+    // Initialize event system memory pools (non-fatal if fails)
+    init_event_pools();
+#endif
 
     g_event_system.initialized = true;
 
@@ -245,15 +404,15 @@ cf_status_t cf_event_subscribe(cf_event_id_t event_id,
     g_event_system.subscriber_count++;
 
     // Return handle if requested
-    if (handle != NULL) {
-        *handle = &g_event_system.subscribers[slot];
+    if (handle) {
+        *handle = (cf_event_subscriber_t)&g_event_system.subscribers[slot];
     }
 
     cf_mutex_unlock(g_event_system.mutex);
 
 #if CF_LOG_ENABLED
-    CF_LOG_D("Subscribed to event 0x%08lX (%s)", event_id,
-             mode == CF_EVENT_SYNC ? "sync" : "async");
+    CF_LOG_D("Subscribed to event 0x%08lX (mode: %s)",
+             event_id, mode == CF_EVENT_SYNC ? "SYNC" : "ASYNC");
 #endif
 
     return CF_OK;
@@ -393,6 +552,11 @@ uint32_t cf_event_get_event_subscriber_count(cf_event_id_t event_id)
     cf_mutex_unlock(g_event_system.mutex);
 
     return count;
+}
+
+bool cf_event_is_initialized(void)
+{
+    return g_event_system.initialized;
 }
 
 #endif /* CF_EVENT_ENABLED && CF_RTOS_ENABLED */

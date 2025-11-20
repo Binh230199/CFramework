@@ -180,6 +180,15 @@ uint32_t cf_event_get_subscriber_count(void);
  */
 uint32_t cf_event_get_event_subscriber_count(cf_event_id_t event_id);
 
+/**
+ * @brief Check if event system is initialized
+ *
+ * @return true if initialized, false otherwise
+ *
+ * @note This function is thread-safe
+ */
+bool cf_event_is_initialized(void);
+
 //==============================================================================
 // CONVENIENCE MACROS
 //==============================================================================
