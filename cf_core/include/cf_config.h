@@ -178,7 +178,7 @@
     #error "CF_THREADPOOL_THREAD_COUNT too small (min 1)"
 #endif
 
-#if CF_EVENT_MAX_SUBSCRIBERS > 64
+#if CF_EVENT_MAX_SUBSCRIBERS > 256
     #error "CF_EVENT_MAX_SUBSCRIBERS too large (max 64)"
 #endif
 

@@ -11,6 +11,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+// FreeRTOS heap functions for thread-safe allocation
+#include "FreeRTOS.h"
+
 //==============================================================================
 // PRIVATE CONSTANTS
 //==============================================================================
@@ -202,8 +205,8 @@ cf_status_t cf_mempool_create(cf_mempool_handle_t* handle,
     // Calculate total memory needed
     size_t total_memory = config->block_count * config->block_size;
 
-    // Allocate pool memory (using malloc for now - could use static allocation)
-    uint8_t* memory = (uint8_t*)malloc(total_memory);
+    // Allocate pool memory using FreeRTOS heap (thread-safe)
+    uint8_t* memory = (uint8_t*)pvPortMalloc(total_memory);
     if (!memory) {
         cf_mutex_unlock(g_pool_manager.global_mutex);
         return CF_ERROR_NO_MEMORY;
@@ -212,7 +215,7 @@ cf_status_t cf_mempool_create(cf_mempool_handle_t* handle,
     // Initialize pool mutex
     cf_status_t status = cf_mutex_create(&pool->mutex);
     if (status != CF_OK) {
-        free(memory);
+        vPortFree(memory);
         cf_mutex_unlock(g_pool_manager.global_mutex);
         return status;
     }
@@ -282,8 +285,8 @@ cf_status_t cf_mempool_destroy(cf_mempool_handle_t handle)
     cf_mutex_lock(g_pool_manager.global_mutex, CF_WAIT_FOREVER);
     cf_mutex_lock(pool->mutex, CF_WAIT_FOREVER);
 
-    // Free pool memory
-    free(pool->memory_base);
+    // Free pool memory using FreeRTOS heap
+    vPortFree(pool->memory_base);
 
     // Destroy pool mutex (unlock first)
     cf_mutex_unlock(pool->mutex);
