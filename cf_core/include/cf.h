@@ -48,6 +48,7 @@ extern "C" {
 
 #include "utils/cf_string.h"
 #include "utils/cf_ringbuf.h"
+#include "utils/cf_stats.h"
 
 #if CF_LOG_ENABLED
     #include "utils/cf_log.h"

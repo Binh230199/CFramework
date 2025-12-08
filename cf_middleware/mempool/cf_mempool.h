@@ -334,6 +334,27 @@ void cf_mempool_config_default(cf_mempool_config_t* config,
                                uint32_t block_count);
 
 //==============================================================================
+// PUBLIC API - POOL ENUMERATION (for stats/debugging)
+//==============================================================================
+
+/**
+ * @brief Enumerate all active pools
+ *
+ * @param[out] handles Array to receive pool handles
+ * @param[in,out] count Pointer to array size (input) and count returned (output)
+ *
+ * @return CF_OK on success
+ * @return CF_ERROR_INVALID_PARAM if parameters are invalid
+ * @return CF_ERROR_BUFFER_TOO_SMALL if array is too small (count contains required size)
+ *
+ * @note Thread-safe
+ * @note Call with count=NULL to get required array size
+ * @note For development/stats use only
+ */
+cf_status_t cf_mempool_enumerate_pools(cf_mempool_handle_t* handles,
+                                       uint32_t* count);
+
+//==============================================================================
 // CONVENIENCE MACROS
 //==============================================================================
 

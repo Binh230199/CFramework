@@ -797,3 +797,50 @@ static struct cf_mempool_s* find_pool_by_pointer(const void* ptr)
 
     return NULL;
 }
+
+//==============================================================================
+// PUBLIC API - POOL ENUMERATION
+//==============================================================================
+
+cf_status_t cf_mempool_enumerate_pools(cf_mempool_handle_t* handles, uint32_t* count)
+{
+    if (!g_pool_manager.initialized) {
+        return CF_ERROR_NOT_INITIALIZED;
+    }
+
+    if (count == NULL) {
+        return CF_ERROR_INVALID_PARAM;
+    }
+
+    uint32_t active_count = 0;
+
+    // Count active pools first
+    for (uint8_t i = 0; i < CF_MEMPOOL_MAX_POOLS; i++) {
+        if (g_pool_manager.pools[i].active) {
+            active_count++;
+        }
+    }
+
+    // If handles is NULL, just return the count
+    if (handles == NULL) {
+        *count = active_count;
+        return CF_OK;
+    }
+
+    // Check if buffer is large enough
+    if (*count < active_count) {
+        *count = active_count;
+        return CF_ERROR_INVALID_PARAM;
+    }
+
+    // Fill the handles array
+    uint32_t index = 0;
+    for (uint8_t i = 0; i < CF_MEMPOOL_MAX_POOLS && index < *count; i++) {
+        if (g_pool_manager.pools[i].active) {
+            handles[index++] = &g_pool_manager.pools[i];
+        }
+    }
+
+    *count = active_count;
+    return CF_OK;
+}
